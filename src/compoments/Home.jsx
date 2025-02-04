@@ -1,7 +1,11 @@
 import React, { useState } from "react";
+import * as XLSX from "xlsx";
+
 
 export default function Home() {
     const [students, setStudents] = useState()
+    const [value, setValue] = useState("");
+    const [A1, setA1] = useState([])
 
     const uploadFile = async () => {
         try {
@@ -12,6 +16,57 @@ export default function Home() {
             console.error('Error uploading or processing file:', error);
         }
     }
+
+    const handleFileUpload = async (e) => {
+        const files = e.target.files;
+
+        let jsonData = null
+        const transformedData = [];
+
+        
+        for (let file of files) {
+            const data = await file.arrayBuffer();
+            const workbook = XLSX.read(data, { type: "buffer" });
+            jsonData = XLSX.utils.sheet_to_json(
+                workbook.Sheets[workbook.SheetNames[1]]
+            );
+        }
+
+        let beginRead = false
+        for(let i=0;i<jsonData.length;i++) {
+            const row = jsonData[i]
+
+            if(row["__EMPTY_2"] === "TRUNG TÂM SÁT HẠCH\n(Ký tên)  " || row["__EMPTY_13"] === "TỔ TRƯỞNG TỔ SÁT HẠCH\n(Ký tên)") break;
+
+            if(beginRead) {
+                transformedData.push({
+                    stt: row["__EMPTY_1"], 
+                    name: row["__EMPTY_5"],
+                    id: row["__EMPTY_11"], 
+                    dateOfBirth: row["__EMPTY_15"], 
+                    address: row["__EMPTY_16"], 
+                    class: row["__EMPTY_25"], 
+                    note: row["__EMPTY_26"], 
+                    check: false,
+                    checkTime: null,
+                });
+            }
+            else if (row["__EMPTY_1"] === "STT") {
+                beginRead = true
+                continue
+            }
+        }
+
+        console.log(transformedData)
+        setA1(transformedData)
+    }
+
+    const handleChange = (event) => {
+        setValue(event.target.value);
+        let test = A1.find((s) => s.stt === Number(event.target.value))
+        console.log("Number changed to:", test);
+      };
+
 
     return <>
         <h1>Students List</h1>
@@ -47,5 +102,15 @@ export default function Home() {
                 })}
             </ul>
         </div>
+        <input
+          className=""
+          multiple
+          type="file"
+          accept=".xlsx, .xls"
+          onChange={handleFileUpload}
+        />
+
+        <input type="text" id="fname" name="fname" onChange={handleChange}/>
+
     </>
 }
