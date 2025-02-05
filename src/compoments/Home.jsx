@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
 
 
@@ -6,6 +6,10 @@ export default function Home() {
     const [students, setStudents] = useState()
     const [value, setValue] = useState("");
     const [A1, setA1] = useState([])
+    const [searchSTT, setSearchSTT] = useState('');
+    const [focusedRow, setFocusedRow] = useState(null);
+
+
 
     const uploadFile = async () => {
         try {
@@ -62,11 +66,37 @@ export default function Home() {
     }
 
     const handleChange = (event) => {
-        setValue(event.target.value);
-        let test = A1.find((s) => s.stt === Number(event.target.value))
-        console.log("Number changed to:", test);
-      };
+        updateSearchValueDebounce(event.target.value);
+        setSearchSTT(value);        
+    };
 
+    useEffect(() => {
+        console.log("Value change", value)
+        const matchedIndex = A1.findIndex(item => item.stt?.toString() === value);
+        setFocusedRow(matchedIndex >= 0 ? matchedIndex : null);
+        if (matchedIndex >= 0) {
+            console.log(matchedIndex)
+            const element = document.getElementById(`row-${matchedIndex}`);
+            element?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }
+    }, [value])
+
+    const updateSearchValueDebounce = debounce(query => {
+        setValue(query);
+        console.log("serach", query)
+        let test = A1.find((s) => s.stt === Number(query))
+    })
+
+    function debounce(cb, delay=100) {
+        let timeout
+
+        return(...args) => {
+            clearTimeout(timeout)
+            timeout = setTimeout(() => {
+                cb(...args)
+            }, delay)
+        }
+    }
 
     return <>
         <h1>Students List</h1>
@@ -110,7 +140,58 @@ export default function Home() {
           onChange={handleFileUpload}
         />
 
-        <input type="text" id="fname" name="fname" onChange={handleChange}/>
-
+        <input className="border border-2" type="text" id="fname" name="fname" onChange={handleChange}/>
+        <div class="overflow-x-auto shadow-md sm:rounded-lg">
+            <table class="w-full text-sm text-left text-gray-500">
+                <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                    <tr>
+                        <th scope="col" class="px-6 py-3">STT</th>
+                        <th scope="col" class="px-6 py-3">Name</th>
+                        <th scope="col" class="px-6 py-3">ID</th>
+                        <th scope="col" class="px-6 py-3">Date of Birth</th>
+                        <th scope="col" class="px-6 py-3">Address</th>
+                        <th scope="col" class="px-6 py-3">Class</th>
+                        <th scope="col" class="px-6 py-3">Note</th>
+                        <th scope="col" class="px-6 py-3">Check Status</th>
+                        <th scope="col" class="px-6 py-3">Check Time</th>
+                    </tr>
+                </thead>
+                <tbody id="tableBody">
+                    {A1.length > 1 && A1.map((item, index) => (
+                        <tr 
+                        key={item.id || index} 
+                        id={`row-${index}`}
+                        className={`
+                            ${index % 2 === 0 ? 'bg-white' : 'bg-gray-50'}
+                            ${focusedRow === index ? 'bg-blue-100 ring-2 ring-blue-500' : ''}
+                            border-b hover:bg-gray-100 transition-all duration-200
+                          `}
+                        >
+                        <td className="px-6 py-4">{item.stt}</td>
+                        <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">
+                            {item.name}
+                        </td>
+                        <td className="px-6 py-4">{item.id}</td>
+                        <td className="px-6 py-4">{item.dateOfBirth}</td>
+                        <td className="px-6 py-4">{item.address}</td>
+                        <td className="px-6 py-4">{item.class}</td>
+                        <td className="px-6 py-4">{item.note}</td>
+                        <td className="px-6 py-4">
+                            <span 
+                            className={`${
+                                item.check 
+                                ? 'bg-green-100 text-green-800' 
+                                : 'bg-red-100 text-red-800'
+                            } text-xs font-medium px-2.5 py-0.5 rounded`}
+                            >
+                            {item.check ? 'Checked' : 'Unchecked'}
+                            </span>
+                        </td>
+                        <td className="px-6 py-4">{item.checkTime}</td>
+                        </tr>
+                    ))}
+                </tbody>
+            </table>
+        </div>
     </>
 }
