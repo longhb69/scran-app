@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import * as XLSX from "xlsx";
+import formatTime from "../utils/fomatTime"
 
 
 export default function DSA1() {
@@ -23,7 +24,6 @@ export default function DSA1() {
             );
         }
 
-        console.log(jsonData)
         let beginRead = false
         for(let i=0;i<jsonData.length;i++) {
             const row = jsonData[i]
@@ -50,12 +50,23 @@ export default function DSA1() {
             }
         }
 
-        console.log(transformedData)
         setA1(transformedData)
+    }
+
+    const test = async (e) => {
+        e.preventDefault()
+        try {
+            const result = await window.electronAPI.uploadFile()
+            console.log(result)
+            setA1(result)
+        }   catch (error) {
+            console.error('Error uploading or processing file:', error);
+        }
     }
 
     useEffect(() => {
         const matchedIndex = A1.findIndex(item => item.stt?.toString() === value);
+        console.log("Match index ", matchedIndex)
         setFocusedRow(matchedIndex >= 0 ? matchedIndex : null);
         if (matchedIndex >= 0) {
             const element = document.getElementById(`row-${matchedIndex}`);
@@ -69,13 +80,19 @@ export default function DSA1() {
             setBackSpace(false)
             return;
         }
-        console.log("scroll")
         updateSearchValueDebounce(event.target.value);
     };
 
     const updateSearchValueDebounce = debounce(query => {
-        setValue(query);
-        let test = A1.find((s) => s.stt === Number(query))
+        let search = A1.find((s) => s.stt === query)
+        if(search) {
+            console.log("find ", query)
+            setValue(query);
+        }
+        else {
+            console.log("Student not found")
+            setValue(null)
+        }
     })
 
     function debounce(cb, delay=100) {
@@ -96,6 +113,19 @@ export default function DSA1() {
                 setValue('')
                 setBackSpace(true)
             }
+            else if(event.key === 'Enter') {
+                console.log(focusedRow)
+                if(focusedRow || focusedRow === 0) {
+                    console.log(focusedRow, A1[focusedRow])
+                    const updatedA1 = [...A1]
+                    updatedA1[focusedRow].check = !updatedA1[focusedRow].check
+                    updatedA1[focusedRow].checkTime = updatedA1[focusedRow].checkTime ? null : formatTime(new Date());
+                    setA1(updatedA1);
+                }
+                else {
+                    console.log("Cannot check ", focusedRow)
+                }
+            }
         };
 
         window.addEventListener('keydown', handleKeyDown);
@@ -103,23 +133,24 @@ export default function DSA1() {
         return () => {
             window.removeEventListener('keydown', handleKeyDown);
         };
-    }, []);
+    }, [focusedRow]);
 
     useEffect(() => {
-        console.log("backspace state change", backspace)
-    }, [backspace])
+        console.log("value state change", value)
+    }, [value])
 
-    return <div className="w-full h-full">
+
+    return <div className="w-full h-full p-10">
         <input
             className=""
             multiple
             type="file"
             accept=".xlsx, .xls"
-            onChange={handleFileUpload}
+            onChange={test}
         />
         <input className="border border-2" type="text" id="fname" name="fname" onChange={handleChange}/>
         <div class="overflow-x-auto shadow-md sm:rounded-lg relative">
-            <table class="w-full text-sm text-left text-gray-500 relative">
+            <table class="w-[80%] text-sm text-left text-gray-500 relative">
                 <thead class="text-xs text-gray-700 uppercase bg-gray-50 relative">
                     <tr className="relative sticky top-0 z-10">
                         <th scope="col" class="px-6 py-3">STT</th>
@@ -139,9 +170,15 @@ export default function DSA1() {
                         key={item.id || index} 
                         id={`row-${index}`}
                         className={`
-                            ${focusedRow === index ? 'bg-blue-200 ring-2 ring-blue-500' : ''}
-                            border-b hover:bg-gray-100 transition-all duration-200
-                          `}
+                            ${item.check ? 'bg-green-100' : ''} 
+                            ${focusedRow === index ? 'bg-blue-100 ring-2 ring-blue-500' : ''} 
+                            cursor-pointer
+                            transition-opacity duration-200 
+                            hover:bg-gray-200
+                        `}
+                        onClick={() => {
+                            setValue((index+1).toString())
+                        }}
                         >
                         <td className="px-6 py-4">{item.stt}</td>
                         <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">

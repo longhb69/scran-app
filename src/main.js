@@ -29,16 +29,21 @@ const createWindow = () => {
 
   ipcMain.handle('upload-file', async (_, options) => {
     const result = await FileManager.uploadFile(mainWindow, options)
-
+    console.log("Call")
     const filePath = result[0]
     const data = ExcelProcessor.extractExcelData(filePath)
-    const extractData = ExcelProcessor.extractStudent(data)
-    return extractData
+    //const extractData = ExcelProcessor.extractStudent(data)
+    return extractDSThiA1(data)
   })
 
   // Open the DevTools.
   mainWindow.webContents.openDevTools();
 };
+
+function extractDSThiA1(data) {
+  const extractData = ExcelProcessor.extractDSThiA1(data)
+  return extractData
+}
 
 function loadStudents() {
   if(!fs.existsSync(studentsFilePath)) {

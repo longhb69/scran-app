@@ -13,5 +13,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   deleteStudent: (id) => ipcRenderer.invoke('delete-student', id),
   updateStudent: (updatedStudent) => ipcRenderer.invoke('update-student', updatedStudent),
   performOCR: (imagePath) => ipcRenderer.invoke('perform-ocr', imagePath),
-  uploadFile: () => ipcRenderer.invoke('upload-file')
+  uploadFile: () => ipcRenderer.invoke('upload-file'),
+  
 })

@@ -32,7 +32,35 @@ class ExcelProcessor {
         }
         return students
     }
-    
+    static extractDSThiA1(data) {
+        const transformedData = [];
+        let beginRead = false
+        for(let i=0;i<data.length;i++) {
+            const row = data[i]
+            const keys = Object.keys(row);
+
+            if(row[keys[0]] === "TRUNG TÂM SÁT HẠCH\n(Ký tên)  " || row[keys[1]] === "TỔ TRƯỞNG TỔ SÁT HẠCH\n(Ký tên)") break;
+
+            if(beginRead) {
+                transformedData.push({
+                    stt: row[keys[1]],
+                    name: row[keys[2]],
+                    id: row[keys[3]],
+                    dateOfBirth: row[keys[4]],
+                    address: "",
+                    class: row[keys[5]],
+                    note: row[keys[6]],
+                    check: false,
+                    checkTime: null,
+                });
+            }
+            else if (row[keys[0]] === "STT") {
+                beginRead = true
+                continue
+            }
+        }
+        return transformedData
+    }
 }
 
 module.exports = ExcelProcessor
